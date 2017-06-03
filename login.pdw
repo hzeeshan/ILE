@@ -1,0 +1,303 @@
+PDF='MAIN'
+{
+	ATTRIBUTES='*'
+	{
+		LIBLOBJ='*FILES';
+		PLATFORM='rpgfree.txt';
+		USEACTGROUP='1';
+		LOCALSCOPE='1';
+		OBJECTNAME='LOGIN2';
+		OBJLIBRARY='XL_WEBAPPS';
+		TITLE='Login ';
+		SOURCEFILE='QRPGLESRC';
+		SOURCELIBR='XL_WEBAPPS';
+		ROWCOLOR1='F0F0FF';
+		ROWCOLOR2='FFFFFF';
+		WEBPATH='http://192.168.75.22:8150/webapps/';
+		SET='-1';
+		VERSION='4.10';
+		CRTBNUM='Revision 25605';
+		CRTTEMPLT='C:\\ESDI\\WebSmart11\\Templates v11.0\\ILE Templates\\DB2\\Sonora\\Login Page.tpl';
+		SAVBNUM='Revision 25605';
+		REPSYSTEM='bigblue';
+		REPTYPE='1';
+		LASTLOC='1';
+		VHTML='N';
+		LASTSAVE='5/23/2017 16:09:21';
+	}
+	PANELS='*'
+	{
+		PANEL='LogInSeg'
+		{
+			DESC='Login Page';
+			DETAILS='<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="generator" content="WebSmart" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <title>Login </title>
+    
+    <link rel="stylesheet" type="text/css" href="/websmart/v11.0/Sonora/css/jquery-ui.css"/>	
+    <link rel="stylesheet" type="text/css" href="/websmart/v11.0/Sonora/css/screen.css" media="all" />
+    <link rel="stylesheet" type="text/css" href="/websmart/v11.0/Sonora/css/print.css" media="print" />
+    
+    <script type="text/javascript" src="/websmart/v11.0/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/websmart/v11.0/js/jquery-ui.min.js"></script>
+    <script type="text/javascript">
+		jQuery(function() {
+			jQuery( "input:submit").button();
+
+			jQuery(\'input:enabled:first\').focus();
+		});
+	</script>
+  </head>
+  <body>
+    <div id="outer-content">
+      <div id="page-title-block" class="page-title-block">
+        <h1>BCD Italia<h1>
+        <div id="page-divider-top" class="page-divider"></div>
+      </div>
+      <div id="page-content">
+        <div id="content-header">
+          <h1 class="title">Login </h1>
+        </div>
+        <div id="contents"> 
+          <field name=errmsg>
+          <form id="loginform" name="login" action="<field name=pgmf_qpgmnam>" method="post"> 
+            <input id="task" type="hidden" name="task" value="trylogin" /> 
+            <table id="logintable"> 
+              <tr>
+                <td>User ID:</td>
+                <td><input id="userid" type="text" name="userid" value="" size="12" maxlength="16" /></td>
+              </tr>
+              <tr>
+                <td>Password:</td>
+                <td><input id="password" type="password" name="password" size="12" maxlength="16" />&nbsp;&nbsp;&nbsp;<input id="login-button" type="submit" value="Login" /></td>
+              </tr>
+              <tr>
+                <td></td>
+                <td><% checkbox("remember", remember, "Y"); %>  Keep me Logged In</td>
+              </tr>
+            </table>
+          </form>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+';
+		}
+	}
+	PREVIEWS='*'
+	{
+		PREVIEW='Login Page'
+		{
+			SEG='LogInSeg';
+		}
+	}
+	ACTIONS='func Main() 
+{ 
+	
+	//	Program Name:		LOGIN
+	//	Program Title:		Login 
+	//	Created by:			ZEESHAN
+	//	Template family:	Sonora
+	//	Template name:		Login Page.tpl
+	//	Purpose:        
+	//		Most applications require a login program in order to determine
+	//	who the end-user is.  You should always use SSL to access your
+	//	login program.  In order to secure your applications you should
+	//	include code at the beginning of each of your programs to check
+	//	to see if you have a valid user (by checking the smurf or 
+	//	transaction information) If you don\'t have a valid user generate 
+	//	an error, or redirect the user to this program.  To effectively 
+	//	secure your application you will want to read the sections of 
+	//	the WebSmart manual relevant to security.
+	//	
+	//	Program Modifications:
+	
+	// Determine which library list will be used
+	setlibl("*FILES"); 
+	
+	// Open all files
+	openfile("*ALL");
+	
+	// Runtasks go here:
+	runtask("DEFAULT", ShowLogin);
+	runtask("TRYLOGIN", TryLogin);
+	runtask("LOGOUT", Logout);
+	
+	crtfld(errmsg, 200, "A",0, "Error message"); 
+	crtklist(pfklist, USUSER);
+	
+	// userdata can contain user info such as name, etc.
+	crtstruct(userdata, USTYPE, USCUNU);
+	
+	crtfld(auth,1, "A",0,"");
+	
+
+}
+
+// Write html for login page:
+func ShowLogin()
+{ 
+	
+	crtfld(remember, 1, "A",0,"remember me option"); 
+	
+	// see if already logged in
+	if (USTYPE == "")
+	{
+		// not logged in
+		wrtseg(LogInSeg);
+	}
+	else
+	{
+		// redirect to initial program 
+		LoggedIn(); 
+	}    
+	
+}
+
+// Attempt to login based on user-supplied values
+func TryLogin()
+{
+	// >>> Userdata can contain user info such as name, etc. 
+	// >>> It is defined as a field, but a data structure can also be used. 
+	crtfld(userdata, 128, "A", 0 ,"User data associated with profile"); 
+	crtfld(remember, 1, "A",0,"remember me option"); 
+	crtfld(rtncode,1, "A", 0, "Return from function"); 
+	
+	// retrieve the parameters from the form
+	getparmset(userid, password, remember); 
+	
+	// check to see if this is a valid userid/password 
+	
+	/**********************
+	Here is where you must:
+	1) Add your User file;
+	2) define a klist to that file;
+	3) retrieve the User record;
+	4) decrypt the password (if necessary);
+	5) decide if the userid/password is valid
+
+	For Example, using a hypthetical file USERF (containing fields USUSER and USPWD):
+	crtklist(pfklist, userid);
+	getrcd(USERF,pfklist);
+	if ((USERF.status == RecordRetrieved) and (password == uspwd))
+	{
+		// this is a valid user
+		rtncode = "0";
+	}
+	else
+	{
+		// this is not a valid user
+		rtncode = "1";
+	}
+	**********************/
+	
+	
+	
+	// userid length is arbitrary; if the password is encrypted, it must be a multiple of 16
+	crtfld(userid, 32, "A", 0, "User id"); 
+	crtfld(password, 32, "A",0, "Password"); 
+	
+	//klist contaning the user id enetered
+	crtklist(pfklist, userid);
+	
+	// retrive the user record based on user id 
+	getrcd(MU_USRF, pfklist);
+	
+	// decrypt the password
+	uspwd = decrypt(uspwd, "BCD", "SOFTWARE");
+	
+	//determine if the user is a valid user
+	if((MU_USRF.status == RecordRetrieved) and (password == uspwd)) {
+		// this is a valid user
+		rtncode = "0";
+	} else { 
+		
+		//the user is not a valid
+		rtncode = "1";
+		
+	}			
+	
+	USUSER = userid;
+	// retrieve the user record based on the userid
+	getrcd(MU_USRF, pfklist);
+	
+	// Error using this user id/password combo - send message to page.
+	if (rtncode <> "0") 
+	{ 
+		errmsg= "Log In Failed: " + pgmf_lasterrtx;  
+		wrtseg(LogInSeg); 
+	} 
+	else 
+	{ 
+		
+		// The SmurfID controls access to the application. This should be the 
+		// only point within the application which generates a SmurfID. Generating 
+		// this SmurfID with parameter *NEW will overwrite any existing SmurfIDs. If 
+		// any other program in your application generates a SmurfID, you may have 
+		// unpredictable behavior.
+		
+		// Remember me chosen: make the smurf persistent 
+		if (remember == "Y")
+		{
+			gensmurfid("*NEW", "*DAY",30, "*YES", "*YES", "*NO");
+		}
+		else
+		{
+			gensmurfid("*NEW", "*DAY",30, "*YES", "*BROWSER", "*NO");
+		}
+		
+		// The existence of a SmurfID indicates that a valid user has logged in. 
+		// It does not indicate which user has logged in.  Therefore, we need 
+		// to save some unique piece of information to identify this user. 
+		// Change MICKEY MOUSE to the user data you wish to store 
+		// (eg a customer number).
+		//userdata = "MICKEY MOUSE";
+		
+		setsmurf("MYLOGIN",userdata);
+		
+		
+		// now that the user is logged in, run the initial program
+		LoggedIn(); 
+	}    
+}
+
+func Logout()
+{
+	
+	dltsmurfid();
+	
+	
+	// redisplay the log in page
+	redirect("");
+}
+
+func LoggedIn()
+{
+	//now that the user is logged in
+	if (USTYPE == "ADMIN") {
+		
+		redirect("custlst.pgm", "*SAME", "rand");
+		
+	} else {
+		
+		redirect("ordrs.pgm", "*SAME", "rand");
+	}
+	
+}
+';
+	FILES='*'
+	{
+		FILE='MU_USRF'
+		{
+			LIBRARY='XL_WEBDEMO';
+			RCDFORMAT='RMUUSRF';
+			LEVELID='1160526094954';
+			RFLEVELID='41EB517948D20';
+			EXTDS='0';
+		}
+	}
+}

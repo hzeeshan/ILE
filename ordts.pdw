@@ -1,0 +1,194 @@
+PDF='MAIN'
+{
+	ATTRIBUTES='*'
+	{
+		LIBLOBJ='*FILES';
+		USEACTGROUP='1';
+		ROWCOLOR1='altcol1';
+		ROWCOLOR2='altcol2';
+		PLATFORM='rpgfree.txt';
+		LOCALSCOPE='1';
+		OBJECTNAME='ORDTS';
+		OBJLIBRARY='XL_WEBAPPS';
+		TITLE='Order Details';
+		SOURCEFILE='QRPGLESRC';
+		SOURCELIBR='XL_WEBAPPS';
+		WEBPATH='http://192.168.75.22:8150/webapps/';
+		SET='-1';
+		VERSION='4.10';
+		CRTBNUM='Revision 25605';
+		CRTTEMPLT='C:\\ESDI\\WebSmart11\\Templates v11.0\\ILE Templates\\DB2\\Sonora\\Record Listing.tpl';
+		SAVBNUM='Revision 25605';
+		REPSYSTEM='bigblue';
+		REPTYPE='1';
+		LASTLOC='3';
+		VHTML='N';
+		LASTSAVE='5/23/2017 17:47:54';
+	}
+	FILES='*'
+	{
+		FILE='MU_ORDDF'
+		{
+			LIBRARY='XL_WEBDEMO';
+			RCDFORMAT='RORDERD';
+			LEVELID='1160526094948';
+			RFLEVELID='4A9C7B0FDB041';
+			EXTDS='0';
+		}
+		FILE='MU_ORDHF'
+		{
+			LIBRARY='XL_WEBDEMO';
+			RCDFORMAT='RORDERH';
+			LEVELID='1160526094949';
+			RFLEVELID='4E69C242A36A9';
+			EXTDS='0';
+		}
+	}
+	PANELS='*'
+	{
+		PANEL='ListHeader'
+		{
+			DESC='Page header';
+			DETAILS='<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="generator" content="WebSmart" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <title>Order Details</title>
+    
+    <link rel="stylesheet" type="text/css" href="/websmart/v11.0/Sonora/css/jquery-ui.css"/>	
+    <link rel="stylesheet" type="text/css" href="/websmart/v11.0/Sonora/css/screen.css" media="all" />
+    <link rel="stylesheet" type="text/css" href="/websmart/v11.0/Sonora/css/print.css" media="print" />
+    
+    <script type="text/javascript" src="/websmart/v11.0/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/websmart/v11.0/js/jquery-ui.min.js"></script>
+  </head>
+  <body class="display-list">
+    <div id="outer-content">
+      <div id="page-title-block" class="page-title-block">
+       <h1>BCD Italia</h1>
+        <div id="page-divider-top" class="page-divider"></div>
+      </div>
+      <div id="page-content">
+        <div id="content-header">
+          <h1 class="title">Order Details for order <field name=OHORD editcode="P">,<field name=OHDESC> </h1>
+        </div>
+        <div id="contents">
+          <table id="list-table" class="main-list ui-widget-content" cellspacing="0">
+            <tr class="header ui-widget-header">
+              <th width="30">Line Number</th>
+              <th width="150">Inventory Item Code</th>
+              <th width="70">Unit Price</th>
+              <th width="70">Order Quantity</th>
+              <th width="110">Extended Amount</th>
+            </tr>
+            ';
+		}
+		PANEL='ListDetails'
+		{
+			DESC='Page body';
+			ITERATIONS='10';
+			DETAILS='
+
+<tr class="<field name=pgmf_altrowclr>">
+  <td class="text num"><field name=ODLINE editcode="P"></td>
+  <td class="text"><field name=ODITEM></td>
+  <td class="text num"><field name=ODPRIC editcode="J"></td>
+  <td class="text num"><field name=ODQTY editcode="P"></td>
+  
+  <td class="text num"><field name=ODEXTAM editcode="J"></td>
+  
+  </tr>
+';
+		}
+		PANEL='ListFooter'
+		{
+			DESC='Page footer';
+			DETAILS='<tr>
+<td colspan="4"></td>
+<td>Total Amount: <field name=total editcode="P"></td>
+</tr>
+
+</table>
+</div>
+</div>
+</div>
+</body>
+</html>
+';
+		}
+	}
+	PREVIEWS='*'
+	{
+		PREVIEW='Main List'
+		{
+			SEG='ListHeader';
+			SEG='ListDetails'
+			{
+				REPEAT='10';
+			}
+			SEG='ListFooter';
+		}
+	}
+	ACTIONS='func Main() 
+{ 
+	
+	//	Program Name:		ORDTS
+	//	Program Title:		Order Details
+	//	Created by:			ZEESHAN
+	//	Template family:	Sonora
+	//	Template name:		Record Listing.tpl
+	//	Purpose:        
+	//	Program Modifications:
+	
+	// Determine which library list will be used
+	setlibl("*FILES"); 
+	
+	// Open all files
+	openfile("*ALL");
+	
+	// Runtasks go here:
+	runtask("DEFAULT", Display); 
+	
+	crtlike(ordnmbr, ODORD, "order Number");
+	
+	crtklist(MU_ORDHF.defaultlink, ordnmbr);
+
+	crtklist(MU_ORDDF.defaultlink, ordnmbr);
+	
+	crtfld(total, 9, "N", 2, "totale");
+	
+	
+}
+
+func Display() 
+{ 
+	// get order number as a perameter
+	ordnmbr = getparm("ordnmbr", "*MAND");
+	
+	getrcd(MU_ORDHF);
+	
+	// Output header
+	wrtseg(ListHeader); 
+	total = 0;
+	// Loop through the records in this file
+	posrcd(MU_ORDDF);
+	 
+	getnxtrcd(MU_ORDDF);
+	 
+	while (MU_ORDDF.status == RecordRetrieved) 
+	{ 
+		// output the list detail
+		wrtseg(ListDetails, TRUE);
+		 
+		total = total + ODEXTAM;
+		
+		// get the next record
+		getnxtrcd(MU_ORDDF);
+	} 
+	
+	// close off the table
+	wrtseg(ListFooter); 
+}
+';
+}
